@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+require('dotenv').config();
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -7,9 +8,9 @@ const client = new Client({
     ],
 });
 
-const textChannelId = env(CHANNEL_ID)
-const guildId = env(GUILD_ID)
-const targetTag = env(TARGET_ID)
+const textChannelId = process.env.CHANNEL_ID;
+const guildId = process.env.GUILD_ID;
+const targetTag = process.env.TARGET_ID;
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}`);
@@ -77,4 +78,4 @@ client.on('voiceStateUpdate',async  (oldState, newState) => {
 
 
 
-client.login(env('BOT_TOKEN')); // Replace with your bot token
+client.login(process.env.BOT_TOKEN); // Replace with your bot token
