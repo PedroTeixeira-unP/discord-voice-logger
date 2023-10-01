@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+
 require('dotenv').config();
 const client = new Client({
     intents: [
@@ -16,13 +17,12 @@ client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on('voiceStateUpdate',async  (oldState, newState) => {
+client.on('voiceStateUpdate', async (oldState, newState) => {
     console.log('Voice state update triggered.');
 
     const textChannel = client.channels.cache.get(textChannelId);
     const guild = client.guilds.cache.get(guildId);
 
-    // Additional checks
     if (!oldState || !newState) {
         console.log('oldState or newState is undefined.');
         return;
@@ -32,7 +32,7 @@ client.on('voiceStateUpdate',async  (oldState, newState) => {
         const voiceChannels = newState.guild.channels.cache.filter(
             (channel) => channel.type === 'GUILD_VOICE' || channel.type === 'GUILD_STAGE_VOICE' || channel.type == 2
         );
-        
+
         const role = guild.roles.cache.get(targetTag);
         let membersWithRole = [];
         if (role) {
@@ -42,37 +42,31 @@ client.on('voiceStateUpdate',async  (oldState, newState) => {
         } else {
             console.error('Role not found.');
         }
-        
-        let message = 'Voice channels:\n';
-        
-        voiceChannels.forEach((channel) => {
-            const members = channel.members.map((member) => member.user.tag);
-            message += `${channel.name} (${members.join(', ')})\n`;
-        });
-        
-        console.log('Message:', message);
-        
-        try {
-            membersWithRole.forEach((member) => {
-                console.log(member.user.username)
-                if (member.user.dmable) {
-                    member.send('Hello! This is a message sent to members with the specified role.')
-                        .catch((error) => console.error(`Error sending message to ${member.user.tag}:`, error));
-                } else {
-                    console.log(`${member.user.tag} has DMs disabled.`);
+
+        membersWithRole.filter(async (member) => {
+            let message = 'Voice Channels Users update:\n';
+
+            // Fetch the channels to make sure the cache is up to date
+            await newState.guild.channels.fetch();
+
+            voiceChannels.forEach((channel) => {
+                const permissions = member.permissionsIn(channel);
+                const hasViewChannelPermission = permissions && permissions.has('ViewChannel');
+                if (hasViewChannelPermission) {
+                    const members = channel.members.map((member) => member.user.tag);
+                    message += `${channel.name} (${members.join(', ')})\n`;
                 }
             });
 
-            // Optionally, send the list of usernames to the channel where the command was received
-            textChannel.send(`Members with the role "${role.name}": ${membersWithRole.map((member) => member.user.username).join(', ')}`);
+            try {
+                member.send(message)
+                        .catch((error) => console.error(`Error sending message to ${member.user.tag}:`, error));
+                console.log('Message sent successfully.');
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        });
 
-            textChannel.send('new input');
-            // textChannel.send(message);
-            console.log('Message sent successfully.');
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
-        
     }
 });
 
